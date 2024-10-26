@@ -1,0 +1,219 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+typedef struct {
+    int id;
+    char nome[50];
+    float valor;
+    char descricao[100];
+    char tipo[20];
+} Produto;
+
+void viewprodutos() {
+    FILE* produtos = fopen("produtos.txt", "r");
+
+    if (produtos == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    printf("Esses são todos os produtos já cadastrados:\n\n");
+    char linha[200];
+    while (fgets(linha, sizeof(linha), produtos) != NULL) {
+        printf("%s", linha); // le o arquivo linha por linha e exibe cada uma
+    }
+    printf("\n");
+
+    fclose(produtos);
+}
+
+int loadprodutos(Produto produtos[], FILE *arquivo) {
+    int i = 0;
+    char linha[200];
+
+    rewind(arquivo); // volta pro inicio do arquivo
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (sscanf(linha, "ID: %d", &produtos[i].id) == 1) {
+            fgets(linha, sizeof(linha), arquivo);
+            sscanf(linha, "Nome: %49[^\n]", produtos[i].nome); //esses numeros significa q o scanf vai pegar 49 caracteres da variavel
+
+            fgets(linha, sizeof(linha), arquivo);
+            sscanf(linha, "Valor: %f", &produtos[i].valor);
+
+            fgets(linha, sizeof(linha), arquivo);
+            sscanf(linha, "Descrição: %99[^\n]", produtos[i].descricao);
+
+            fgets(linha, sizeof(linha), arquivo);
+            sscanf(linha, "Tipo: %19[^\n]", produtos[i].tipo); // usei fgets e sscanf pq só o fscanf tava dando erro com quebra de linha
+            
+            i++; // incrementa pra completar o produto
+        }
+    }
+    return i; // total de produtos lidos
+}
+
+int buscarid(Produto produtos[], int total, int id) {
+    for (int i = 0; i < total; i++) {
+        if (produtos[i].id == id) { // percorre o array ate achar o id
+            return i;
+        }
+    }
+    return -1;
+}
+
+int editinfo() {
+    viewprodutos();
+    Produto produtos[50];
+    int id;
+    int totalprodutos = 0;
+
+    FILE *arq = fopen("produtos.txt", "r+");
+    if (arq == NULL) {
+        printf("Falha ao abrir o arquivo.\n");
+        return -1;
+    }
+
+    totalprodutos = loadprodutos(produtos, arq);
+
+    printf("Digite o ID do produto que gostaria de editar:\n");
+    scanf("%d", &id);
+
+    int i = buscarid(produtos, totalprodutos, id);
+    if (i == -1) {
+        printf("Produto não encontrado.\n");
+        fclose(arq);
+        return -1;
+    }
+
+    int escolha;
+    printf("O que deseja editar?\n1. Nome\n2. Valor\n3. Descrição\n4. Tipo\n5. Tudo\n6. Excluir produto\n7. Cancelar operação\n");
+    scanf("%d", &escolha);
+
+    switch (escolha) {
+        case 1:
+            printf("Novo nome: ");
+            getchar();
+            fgets(produtos[i].nome, 50, stdin);
+            produtos[i].nome[strcspn(produtos[i].nome, "\n")] = '\0';
+            break;
+        case 2:
+            printf("Novo valor: ");
+            scanf("%f", &produtos[i].valor);
+            break;
+        case 3:
+            printf("Nova descrição: ");
+            getchar();
+            fgets(produtos[i].descricao, 100, stdin);
+            produtos[i].descricao[strcspn(produtos[i].descricao, "\n")] = '\0';
+            break;
+        case 4:
+            printf("Novo tipo (ex: Bebida, Porção): ");
+            getchar();
+            fgets(produtos[i].tipo, 20, stdin);
+            produtos[i].tipo[strcspn(produtos[i].tipo, "\n")] = '\0';
+            break;
+        case 5:
+            printf("Novo nome: ");
+            getchar();
+            fgets(produtos[i].nome, 50, stdin);
+            produtos[i].nome[strcspn(produtos[i].nome, "\n")] = '\0';
+            printf("Novo valor: ");
+            scanf("%f", &produtos[i].valor);
+            getchar();
+            printf("Nova descrição: ");
+            fgets(produtos[i].descricao, 100, stdin);
+            produtos[i].descricao[strcspn(produtos[i].descricao, "\n")] = '\0';
+            printf("Novo tipo (ex: Bebida, Porção): ");
+            fgets(produtos[i].tipo, 20, stdin);
+            produtos[i].tipo[strcspn(produtos[i].tipo, "\n")] = '\0';
+            break;
+        case 6:
+            produtos[i].id = -1; // marca como excluído
+            break;
+        case 7:
+            fclose(arq);
+            return 0;
+        default:
+            printf("Opção inválida.\n");
+    }
+
+    freopen("produtos.txt", "w", arq); // muda o modo de um arquivo ja aberto 
+    for (int j = 0; j < totalprodutos; j++) {
+        if (produtos[j].id != -1) {
+            fprintf(arq, "ID: %d\nNome: %s\nValor: %.2f\nDescrição: %s\nTipo: %s\n\n", 
+                    produtos[j].id, produtos[j].nome, produtos[j].valor, produtos[j].descricao, produtos[j].tipo);
+        }
+    }
+
+    fclose(arq);
+    printf("Informações editadas com sucesso.\n");
+    return 0;
+}
+
+void addproduto() {
+    FILE* arq = fopen("produtos.txt", "a+");
+    int newid = 0;
+    Produto produtos[50];
+    Produto novo;
+
+    if (arq == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    newid = loadprodutos(produtos, arq) + 1; //pega o total de produtos + 1 p ser o id do novo produto (evita id repetido)
+    novo.id = newid;
+
+    getchar();
+    printf("Qual o nome do produto que gostaria de adicionar?\n");
+    fgets(novo.nome, 50, stdin);
+    novo.nome[strcspn(novo.nome, "\n")] = '\0'; // tirando o \n
+
+    printf("Qual o valor desse produto?\n");
+    scanf("%f", &novo.valor);
+    getchar();
+
+    printf("Insira uma breve descrição sobre o produto.\n");
+    fgets(novo.descricao, 100, stdin);
+    novo.descricao[strcspn(novo.descricao, "\n")] = '\0';
+
+    printf("Qual o tipo do produto (ex: Bebida, Porção)?\n");
+    fgets(novo.tipo, 20, stdin);
+    novo.tipo[strcspn(novo.tipo, "\n")] = '\0';
+
+    fprintf(arq, "ID: %d\nNome: %s\nValor: %.2f\nDescrição: %s\nTipo: %s\n\n", novo.id, novo.nome, novo.valor, novo.descricao, novo.tipo);
+
+    fclose(arq);
+    printf("Produto cadastrado com sucesso!\n");
+}
+
+void cadastro() {
+    int escolha;
+
+    printf("O que você deseja fazer?\n1. Adicionar novo produto;\n2. Editar informações já existentes;\n3. Visualizar produtos cadastrados;\n4. Sair.\n");
+    scanf("%d", &escolha);
+
+    switch (escolha) {
+        case 1:
+            addproduto();
+            break;
+        case 2:
+            editinfo();
+            break;
+        case 3:
+            viewprodutos();
+            break;
+        case 4:
+            break;
+        default:
+            printf("Escolha inválida.\n");
+    }
+}
+
+int main () {
+    cadastro();
+
+    return 0;
+}
