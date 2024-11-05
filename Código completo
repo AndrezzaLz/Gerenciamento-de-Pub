@@ -34,18 +34,13 @@ int loadprodutos(Produto produtos[], FILE *arquivo) {
 
     rewind(arquivo); // volta pro inicio do arquivo
 
-    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-        if (sscanf(linha, "ID: %d", &produtos[i].id) == 1) {
-            fscanf(arquivo, "Nome: %49[^\n]", produtos[i].nome);
+    while (fscanf(arquivo, " ID: %d\n", &produtos[i].id) == 1) {
+        fscanf(arquivo, " Nome: %[^\n]\n", produtos[i].nome);
+        fscanf(arquivo, " Valor: %f\n", &produtos[i].valor);
+        fscanf(arquivo, " Descrição: %[^\n]\n", produtos[i].descricao);
+        fscanf(arquivo, " Tipo: %[^\n]\n\n", produtos[i].tipo); // Lê o tipo e pula a linha em branco entre registros
 
-            fscanf(arquivo, "Valor: %f\n", &produtos[i].valor);
-
-            fscanf(arquivo, "Descrição: %99[^\n]", produtos[i].descricao);
-
-            fscanf(arquivo, "Tipo: %19[^\n]", produtos[i].tipo); // usei fgets e sscanf pq só o fscanf tava dando erro com quebra de linha
-            
-            i++; // incrementa pra completar o produto
-        }
+        i++; // Incrementa para o próximo produto
     }
     return i; // total de produtos lidos
 }
@@ -189,7 +184,7 @@ void cadastro() {
     int escolha = 0;
 
     while(escolha != 4){
-        printf("O que você deseja fazer?\n1. Adicionar novo produto;\n2. Editar informações já existentes;\n3. Visualizar produtos cadastrados;\n4. Sair.\n");
+        printf("O que você deseja fazer?\n1. Adicionar novo produto;\n2. Editar informações já existentes;\n3. Visualizar produtos cadastrados;\n4. Continuar.\n");
         scanf("%d", &escolha);
 
    
@@ -221,7 +216,7 @@ typedef struct {
     int id;
 } Pedido;
 
-void consultarPedidos() {
+void consultarPedidos() { // função para ler e imprimir o arquivo "Pedidos" inteiro
     FILE* arquivo = fopen("pedidos.txt", "r");
 
     if (arquivo == NULL) {
@@ -231,7 +226,7 @@ void consultarPedidos() {
 
     printf("Aqui está a lista de pedidos feitos:\n\n");
     char linha[200];
-    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) { // le o arquivo linha por linha 
         printf("%s", linha); 
     }
     printf("\n");
@@ -239,22 +234,22 @@ void consultarPedidos() {
     fclose(arquivo);
 }
 
-int contarPedidos(Pedido pedidos[], FILE *arquivo){
+int contarPedidos(Pedido pedidos[], FILE *arquivo){ //conta o número de pedidos feitos, serve para numerar as comandas
     int i = 0;
-    char linha[100];
+    char linha[200];
 
-    rewind(arquivo);
+    rewind(arquivo); //le o arquivo do começo
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
 
-        if (strncmp(linha, "Código Comanda:", 15) == 0) { //verifica se os 15 primeiros caracteres da linha são "Código Comanda:". 
-            i++;
+        if (strncmp(linha, "Código Comanda:", 15) == 0) { //compara se os 15 primeiros caracteres da linha são "Código Comanda:" 
+            i++; 
         }
     }
-    return i;
+    return i; //retorna o número de comandas do arquivo
 }
 
-float buscarPreco(char *nomeProduto) {
+float buscarPreco(char *nomeProduto) { // busca o preço do produto pedido
     FILE *arqProdutos = fopen("produtos.txt", "r");
     if (arqProdutos == NULL) {
         printf("Erro ao abrir o arquivo de produtos.\n");
@@ -262,19 +257,19 @@ float buscarPreco(char *nomeProduto) {
     }
 
     Produto produtos[50];
-    int totalProdutos = loadprodutos(produtos, arqProdutos);
+    int totalProdutos = loadprodutos(produtos, arqProdutos); //busca o total de produtos cadastrados
     fclose(arqProdutos);
 
     for (int i = 0; i < totalProdutos; i++) {
-        if (strcmp(produtos[i].nome, nomeProduto) == 0) {
-            return produtos[i].valor;
+        if (strcmp(produtos[i].nome, nomeProduto) == 0) { //itera sobre os nomes dos produtos cadastrados até encontrar uma correspondencia
+            return produtos[i].valor;                     //retorna o valor daquele produto
         }
     }
     printf("Produto não encontrado.\n");
     return -1; 
 }
 
-int buscarId(char *nomeProduto) {
+int buscarId(char *nomeProduto) { //busca o id do produto pedido
     FILE *arqProdutos = fopen("produtos.txt", "r");
     if (arqProdutos == NULL) {
         printf("Erro ao abrir o arquivo de produtos.\n");
@@ -282,19 +277,19 @@ int buscarId(char *nomeProduto) {
     }
 
     Produto produtos[50];
-    int totalProdutos = loadprodutos(produtos, arqProdutos);
+    int totalProdutos = loadprodutos(produtos, arqProdutos); //busca o total de produtos cadastrados
     fclose(arqProdutos);
 
     for (int i = 0; i < totalProdutos; i++) {
-        if (strcmp(produtos[i].nome, nomeProduto) == 0) {
-            return produtos[i].id;
+        if (strcmp(produtos[i].nome, nomeProduto) == 0) { //itera sobre os nomes dos produtos cadastrados até encontrar uma correspondencia
+            return produtos[i].id;                        //retorna o id daquele produto
         }
     }
     printf("Produto não encontrado.\n");
     return -1; 
 }
 
-void deletarTudo() {
+void deletarTudo() { //limpa todo o arquivo de comandas
     FILE* arquivo = fopen("pedidos.txt", "w"); // Abre com o w pra resetar o arquivo
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo.\n");
@@ -304,7 +299,50 @@ void deletarTudo() {
     printf("Todos os pedidos foram deletados.\n");
 }
 
-void cadastrarPedido(){
+void deletarComanda() {// deleta uma comanda especifica
+
+    int codigoComanda;
+    printf("Digite o código da comanda que deseja excluir: ");
+    scanf("%d", &codigoComanda);
+
+    FILE *arquivo = fopen("pedidos.txt", "r");
+    FILE *transicao = fopen("transicao.txt", "w"); 
+
+    if (arquivo == NULL || transicao == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        if (arquivo) 
+            fclose(arquivo);
+        if (transicao) 
+            fclose(transicao);
+        return;
+    }
+
+    char linha[200];
+    int copiar = 1; 
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+
+        if (strncmp(linha, "Código Comanda:", 15) == 0) { //compara se os 15 primeiros caracteres da linha são "Código Comanda:".
+            int codigoAtual;
+            sscanf(linha, "Código Comanda: %d", &codigoAtual); // analisa o texto da linha e armazena o codigo da comanda em codigo atual   
+            copiar = (codigoAtual != codigoComanda); //resulta em 1 se os codigos forem diferentes e em 0 se forem iguais
+        }
+
+        if (copiar == 1) { 
+            fputs(linha, transicao); //copia as comandas no arquivo temporário
+        }
+    }
+    fclose(arquivo);
+    fclose(transicao);
+
+    remove("pedidos.txt"); //apaga o arquivo original
+    rename("transicao.txt", "pedidos.txt"); //renomeia o arquivo temporario
+
+    printf("Comanda %d excluída com sucesso.\n", codigoComanda);
+}
+
+
+void cadastrarPedido(){ 
 
     FILE *arqProdutos = fopen("produtos.txt", "r");
     if (arqProdutos == NULL) {
@@ -313,13 +351,13 @@ void cadastrarPedido(){
     }
 
     Produto produtos[50];
-    int totalProdutos = loadprodutos(produtos, arqProdutos);
+    int totalProdutos = loadprodutos(produtos, arqProdutos); //pega o total de pedidos lidos
     fclose(arqProdutos);
 
     printf("\n");
     printf("Os produtos disponiveis são:\n");
     for (int i = 0; i < totalProdutos; i++) {
-        printf("%d - %s - %.2f\n", i, produtos[i].nome, produtos[i].valor);
+        printf("%d - %s - %.2f\n", i, produtos[i].nome, produtos[i].valor); //lista em um indice, o nome e o valor dos produtos cadastrados 
     }
 
     FILE* arquivo = fopen("pedidos.txt", "a+");
@@ -333,8 +371,8 @@ void cadastrarPedido(){
         return;
     }
 
-    totalPedidos = contarPedidos(pedidos, arquivo);
-    int codigoComanda = totalPedidos + 1; 
+    totalPedidos = contarPedidos(pedidos, arquivo);// pega o total de pedidos
+    int codigoComanda = totalPedidos + 1; //adiciona 1 ao total de pedidos para cadastrar o proximo
 
     printf("\n");
     printf("Quantos produtos diferentes deseja adicionar à comanda?\n");
@@ -342,23 +380,23 @@ void cadastrarPedido(){
 
     fprintf(arquivo, "Código Comanda: %d\n", codigoComanda);
 
-    for (int i = 0; i < quantItems; i++){
+    for (int i = 0; i < quantItems; i++){ //itera sobre a quantidades de itens diferentes por comanda
         Pedido novoPedido;
         int escolhaProduto;
 
         printf("Produto %d:\n", i + 1);
         printf("Indice do produto: ");
-        scanf("%d", &escolhaProduto);
+        scanf("%d", &escolhaProduto); //o uauario escolhe o produto usando o indice que foi mostrado
 
-        strcpy(novoPedido.produto, produtos[escolhaProduto].nome);
+        strcpy(novoPedido.produto, produtos[escolhaProduto].nome); // copia o nome do produto escolhido para a struct do pedido 
 
-        novoPedido.valor = buscarPreco(novoPedido.produto);
+        novoPedido.valor = buscarPreco(novoPedido.produto); //busca o preço do produto escolhido
         if (novoPedido.valor == -1) {
             printf("Erro. Produto não encontrado.\n");
             continue;
         }
 
-        novoPedido.id = buscarId(novoPedido.produto);
+        novoPedido.id = buscarId(novoPedido.produto); //busca o ID do produto escolhido
         if (novoPedido.id == -1) {
             printf("Erro. Produto não encontrado.\n");
             continue;
@@ -367,8 +405,8 @@ void cadastrarPedido(){
         printf("Quantidade: ");
         scanf("%d", &novoPedido.quantidade);
 
-        float totalProduto = novoPedido.valor * novoPedido.quantidade;
-        totalComanda += totalProduto;
+        float totalProduto = novoPedido.valor * novoPedido.quantidade; // calcula o preço total dos itens iguais 
+        totalComanda += totalProduto; // soma para exibir o preço total da comanda
 
         fprintf(arquivo, "Produto: %s\nID: %d\nQuantidade: %d\nValor Unitário: %.2f\nTotal: %.2f\n", 
                 novoPedido.produto, novoPedido.id, novoPedido.quantidade, novoPedido.valor, totalProduto);
@@ -383,9 +421,14 @@ void cadastrarPedido(){
 void pedido(){
     int escolha = 0;
 
-    while(escolha != 4){
+    while(escolha != 5){
         printf("\n");
-        printf("O que você deseja fazer?\n1. Adicionar novo pedido;\n2. Visualizar pedidos cadastrados;\n3. Excluir todos os pedidos;\n4. Sair.\n");
+        printf("\nO que você deseja fazer?\n");
+        printf("1. Adicionar novo pedido;\n");
+        printf("2. Visualizar pedidos cadastrados;\n");
+        printf("3. Excluir um pedido específico;\n");
+        printf("4. Excluir todos os pedidos;\n");
+        printf("5. Sair.\n");
         scanf("%d", &escolha);
 
         switch (escolha) {
@@ -396,9 +439,11 @@ void pedido(){
                 consultarPedidos();
                 break;
             case 3:
-                deletarTudo();
+                deletarComanda();
                 break;
             case 4:
+                deletarTudo();
+            case 5:
                 break;
             default:
                 printf("Escolha inválida.\n");    
