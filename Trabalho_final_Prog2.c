@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-//                                         PARTE DA DANDARA                                     //
 typedef struct
 {
     int id;
@@ -209,7 +208,6 @@ void addproduto()
     printf("Produto cadastrado com sucesso!\n");
 }
 
-//                                         PARTE DA BIA                                     //
 void listarProdutos()
 {
     FILE *produtos = fopen("produtos.txt", "r");
@@ -312,7 +310,6 @@ void estoque()
     }
 }
 
-//                                         PARTE DA DANDARA                                     //
 void cadastro()
 {
     int escolha = 0;
@@ -343,8 +340,6 @@ void cadastro()
         }
     }
 }
-
-//                                         PARTE DA MIRELLA                                     //
 
 typedef struct
 {
@@ -387,12 +382,11 @@ int contarPedidos(Pedido pedidos[], FILE *arquivo)
     while (fgets(linha, sizeof(linha), arquivo) != NULL)
     {
 
-        if (strncmp(linha, "Código Comanda:", 15) == 0)
-        { // verifica se os 15 primeiros caracteres da linha são "Código Comanda:".
+        if (strncmp(linha, "Código Comanda:", 15) == 0){ // verifica se os 15 primeiros caracteres da linha são "Código Comanda:".
             i++;
         }
     }
-    return i;
+    return i; //retorna o número de comandas do arquivo
 }
 
 float buscarPreco(char *nomeProduto)
@@ -410,7 +404,7 @@ float buscarPreco(char *nomeProduto)
 
     for (int i = 0; i < totalProdutos; i++)
     {
-        if (strcmp(produtos[i].nome, nomeProduto) == 0)
+        if (strcmp(produtos[i].nome, nomeProduto) == 0) //itera sobre os nomes dos produtos cadastrados até encontrar uma correspondencia
         {
             return produtos[i].valor;
         }
@@ -434,7 +428,7 @@ int buscarId(char *nomeProduto)
 
     for (int i = 0; i < totalProdutos; i++)
     {
-        if (strcmp(produtos[i].nome, nomeProduto) == 0)
+        if (strcmp(produtos[i].nome, nomeProduto) == 0) //itera sobre os nomes dos produtos cadastrados até encontrar uma correspondencia
         {
             return produtos[i].id;
         }
@@ -483,21 +477,20 @@ void deletarComanda()
         if (strncmp(linha, "Código Comanda:", 15) == 0)
         {
             int codigoAtual;
-            sscanf(linha, "Código Comanda: %d", &codigoAtual);
-            copiar = (codigoAtual != codigoComanda); // ignorar a comanda se for o código para excluir
+            sscanf(linha, "Código Comanda: %d", &codigoAtual); //analisa o texto da linha e armazena o codigo da comanda em codigo atual
+            copiar = (codigoAtual != codigoComanda); //resulta em 1 se os codigos forem diferentes e em 0 se forem iguais
         }
 
         if (copiar)
-        { // copia as comandas no arquivo temporário
-            fputs(linha, transicao);
+        { 
+            fputs(linha, transicao); // copia as comandas no arquivo temporário
         }
     }
     fclose(arquivo);
     fclose(transicao);
 
-    // Substitui o arquivo original pelo temporário
-    remove("pedidos.txt");
-    rename("transicao.txt", "pedidos.txt");
+    remove("pedidos.txt"); //apaga o arquivo original
+    rename("transicao.txt", "pedidos.txt"); //renomeia o arquivo de transição
 
     printf("Comanda %d excluída com sucesso.\n", codigoComanda);
 }
@@ -536,7 +529,7 @@ void cadastrarPedido()
     }
 
     totalPedidos = contarPedidos(pedidos, arquivo);
-    int codigoComanda = totalPedidos + 1;
+    int codigoComanda = totalPedidos + 1; //adiciona 1 ao total de pedidos para cadastrar o proximo
 
     printf("\n");
     printf("Quantos produtos diferentes deseja adicionar à comanda?\n");
@@ -544,7 +537,7 @@ void cadastrarPedido()
 
     fprintf(arquivo, "Código Comanda: %d\n", codigoComanda);
 
-    for (int i = 0; i < quantItems; i++)
+    for (int i = 0; i < quantItems; i++) //itera sobre a quantidades de itens diferentes por comanda
     {
         Pedido novoPedido;
         int escolhaProduto;
@@ -553,7 +546,7 @@ void cadastrarPedido()
         printf("Indice do produto: ");
         scanf("%d", &escolhaProduto);
 
-        strcpy(novoPedido.produto, produtos[escolhaProduto].nome);
+        strcpy(novoPedido.produto, produtos[escolhaProduto].nome); // copia o nome do produto escolhido para a struct do pedido 
 
         novoPedido.valor = buscarPreco(novoPedido.produto);
         if (novoPedido.valor == -1)
